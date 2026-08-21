@@ -1,0 +1,40 @@
+# ============================================================
+# Agentic-JobApply-Companion — Docker Compose (Optional)
+# ============================================================
+# For consistent local runs with Playwright pre-installed.
+# Usage: docker compose up --build
+# ============================================================
+
+services:
+  jobapply-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jobapply-agent
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/config
+    working_dir: /app
+    command: python main.py run
+    restart: "no"
+
+  # Optional: run the profile intake interactively
+  profile-intake:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jobapply-intake
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    working_dir: /app
+    command: python main.py intake
+    stdin_open: true
+    tty: true
+    profiles:
+      - intake

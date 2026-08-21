@@ -1,0 +1,138 @@
+# ============================================================
+# Model Router Configuration
+# ============================================================
+# Maps task tiers to LLM providers and models.
+# Edit this file to swap providers without changing code.
+# ============================================================
+
+# Available providers: groq, openrouter, google, openai, anthropic, ollama
+# Each tier defines a primary provider/model and optional fallback chain.
+
+tiers:
+  # --- Small Tier: high-volume, low-stakes tasks ---
+  parsing:
+    description: "Resume parsing → structured schema extraction"
+    primary:
+      provider: groq
+      model: llama-3.3-70b-versatile
+      temperature: 0.1
+      max_tokens: 4096
+    fallbacks:
+      - provider: openrouter
+        model: meta-llama/llama-3.3-70b-instruct:free
+        temperature: 0.1
+        max_tokens: 4096
+
+  classification:
+    description: "Field-label classification (experience, project, URL, address, etc.)"
+    primary:
+      provider: groq
+      model: llama-3.3-70b-versatile
+      temperature: 0.0
+      max_tokens: 1024
+    fallbacks:
+      - provider: openrouter
+        model: meta-llama/llama-3.3-70b-instruct:free
+        temperature: 0.0
+        max_tokens: 1024
+
+  # --- Mid Tier: moderate volume, moderate stakes ---
+  scoring:
+    description: "Job relevance scoring (LLM-augmented component)"
+    primary:
+      provider: groq
+      model: llama-3.3-70b-versatile
+      temperature: 0.2
+      max_tokens: 2048
+    fallbacks:
+      - provider: openrouter
+        model: meta-llama/llama-3.3-70b-instruct:free
+        temperature: 0.2
+        max_tokens: 2048
+
+  fraud_analysis:
+    description: "Soft-signal fraud analysis for ambiguous listings"
+    primary:
+      provider: groq
+      model: llama-3.3-70b-versatile
+      temperature: 0.1
+      max_tokens: 2048
+    fallbacks:
+      - provider: openrouter
+        model: meta-llama/llama-3.3-70b-instruct:free
+        temperature: 0.1
+        max_tokens: 2048
+
+  # --- Best Tier: low volume, high stakes ---
+  cover_letter:
+    description: "Cover letter generation — quality-critical, natural tone"
+    primary:
+      provider: google
+      model: gemini-2.0-flash
+      temperature: 0.7
+      max_tokens: 2048
+    fallbacks:
+      - provider: openrouter
+        model: google/gemini-2.0-flash-exp:free
+        temperature: 0.7
+        max_tokens: 2048
+      - provider: groq
+        model: llama-3.3-70b-versatile
+        temperature: 0.7
+        max_tokens: 2048
+
+  legal_review:
+    description: "Legal clause extraction — must not miss binding clauses"
+    primary:
+      provider: google
+      model: gemini-2.0-flash
+      temperature: 0.0
+      max_tokens: 4096
+    fallbacks:
+      - provider: openrouter
+        model: google/gemini-2.0-flash-exp:free
+        temperature: 0.0
+        max_tokens: 4096
+      - provider: groq
+        model: llama-3.3-70b-versatile
+        temperature: 0.0
+        max_tokens: 4096
+
+# --- Provider-level settings ---
+providers:
+  groq:
+    base_url: "https://api.groq.com/openai/v1"
+    env_key: "GROQ_API_KEY"
+    rate_limit_rpm: 30
+    rate_limit_rpd: 14400
+
+  openrouter:
+    base_url: "https://openrouter.ai/api/v1"
+    env_key: "OPENROUTER_API_KEY"
+    rate_limit_rpm: 20
+
+  google:
+    env_key: "GOOGLE_AI_API_KEY"
+    rate_limit_rpm: 60
+
+  openai:
+    base_url: "https://api.openai.com/v1"
+    env_key: "OPENAI_API_KEY"
+    rate_limit_rpm: 60
+
+  anthropic:
+    base_url: "https://api.anthropic.com"
+    env_key: "ANTHROPIC_API_KEY"
+    rate_limit_rpm: 60
+
+  ollama:
+    base_url_env: "OLLAMA_BASE_URL"
+    default_base_url: "http://localhost:11434"
+    rate_limit_rpm: 999  # local, no real limit
+
+# --- Retry settings ---
+retry:
+  max_retries: 3
+  base_delay_seconds: 1.0
+  max_delay_seconds: 30.0
+  exponential_base: 2.0

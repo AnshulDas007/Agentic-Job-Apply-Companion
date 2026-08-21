@@ -1,0 +1,61 @@
+# ============================================================
+# Agentic-JobApply-Companion .gitignore
+# ============================================================
+
+# --- Environment & Secrets ---
+.env
+.env.local
+.env.*.local
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# --- Virtual Environment ---
+venv/
+.venv/
+env/
+
+# --- Data (PII, profiles, scraped jobs — NEVER commit) ---
+data/
+logs/
+
+# --- Database ---
+*.db
+*.sqlite
+*.sqlite3
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# --- Testing ---
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# --- Playwright ---
+playwright-report/
+test-results/
+
+# --- Build Progress Tracker (local only) ---
+PROGRESS_TRACKER.md
+
+# --- Docker ---
+docker-compose.override.yml
+
+# --- OS ---
+Thumbs.db
+ehthumbs.db

@@ -1,0 +1,96 @@
+# ============================================================
+# Application Settings
+# ============================================================
+# General application configuration.
+# ============================================================
+
+# --- Application Behavior ---
+application:
+  # Burn-in mode: when true, ALL applications (including Tier 1) are held
+  # for human review. Set to false after 2 weeks of zero verification failures.
+  burn_in_mode: true
+
+  # Maximum applications per run cycle
+  max_applications_per_run: 20
+
+  # Maximum concurrent Playwright browser sessions
+  max_browser_sessions: 3
+
+  # Timeout for form filling (seconds)
+  form_fill_timeout: 120
+
+  # Screenshot before/after form fill for audit
+  capture_screenshots: true
+  screenshot_dir: "data/screenshots"
+
+# --- Scraping ---
+scraping:
+  # Platforms to scrape (can disable individual platforms)
+  platforms:
+    linkedin: true
+    indeed: true
+    naukri: true
+    wellfound: true
+    ziprecruiter: true
+    yc_jobs: true
+    greenhouse: true
+    lever: true
+    workday: true
+    ashby: true
+
+  # Rate limiting between requests (seconds)
+  request_delay: 2.0
+
+  # Maximum listings to fetch per platform per run
+  max_listings_per_platform: 50
+
+# --- Fraud Filter ---
+fraud_filter:
+  # Minimum legitimacy score (0.0 to 1.0) after hard-blockers pass
+  minimum_legitimacy_score: 0.50
+
+  # Soft signal weights
+  signal_weights:
+    linkedin_presence: 0.30
+    glassdoor_presence: 0.20
+    salary_reasonableness: 0.25
+    urgency_language: 0.25
+
+# --- Cover Letter ---
+cover_letter:
+  # Maximum length (words)
+  max_words: 350
+
+  # Minimum length (words)
+  min_words: 150
+
+  # Maximum regeneration attempts if ban-list phrases detected
+  max_regeneration_attempts: 3
+
+# --- Legal Review ---
+legal_review:
+  # Patterns that trigger hard stop (always hold for human)
+  hard_stop_keywords:
+    - "arbitration"
+    - "non-compete"
+    - "non-solicit"
+    - "intellectual property assignment"
+    - "IP assignment"
+    - "background check"
+    - "binding agreement"
+    - "waive"
+    - "indemnify"
+
+# --- Daily Digest ---
+digest:
+  # Output format: file, email, or both
+  output: "file"
+  file_path: "data/digests/"
+
+# --- Logging ---
+logging:
+  level: "INFO"
+  format: "json"
+  file: "logs/application.log"
+  max_file_size_mb: 10
+  backup_count: 5

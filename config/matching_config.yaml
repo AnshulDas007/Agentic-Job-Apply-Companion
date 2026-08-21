@@ -1,0 +1,45 @@
+# ============================================================
+# Matching & Relevance Scoring Configuration
+# ============================================================
+# Controls how job listings are scored against the candidate profile.
+# ============================================================
+
+# --- Embedding Model ---
+embedding:
+  model_name: "all-MiniLM-L6-v2"  # Fast, good quality, ~80MB
+  # Alternative: "all-mpnet-base-v2" (better quality, ~420MB)
+  cache_dir: "data/models"
+
+# --- Scoring Weights ---
+# How much each component contributes to the final relevance score.
+# Must sum to 1.0.
+weights:
+  embedding_similarity: 0.40   # Cosine similarity of profile vs job embeddings
+  skill_match: 0.30            # % of required skills the candidate has
+  experience_relevance: 0.20   # How relevant the candidate's experience is
+  location_fit: 0.10           # Location match (remote, relocation, etc.)
+
+# --- Thresholds ---
+thresholds:
+  # Minimum embedding similarity to proceed to LLM-augmented scoring
+  # (saves LLM calls by filtering obvious mismatches early)
+  embedding_prefilter: 0.35
+
+  # Minimum final combined score to be eligible for application
+  # (conservative default — loosen if not getting enough matches)
+  minimum_match_score: 0.65
+
+  # Score above which the listing is considered a "strong match"
+  strong_match_score: 0.80
+
+# --- ChromaDB Vector Store ---
+vector_store:
+  collection_name: "job_listings"
+  persist_directory: "data/chroma_db"
+
+# --- Deduplication ---
+deduplication:
+  # How to detect duplicate listings
+  method: "url_hash"  # Options: url_hash, embedding_similarity
+  # If using embedding_similarity, threshold for considering a duplicate
+  similarity_threshold: 0.95

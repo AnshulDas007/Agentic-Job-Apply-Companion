@@ -1,0 +1,116 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "agentic-jobapply-companion"
+version = "1.0.0"
+description = "An agentic job-application copilot that only applies to verified companies, never fabricates experience, and never auto-signs anything legally binding."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Anshul Das", email = "anshuldas42@gmail.com"},
+]
+keywords = ["job-application", "ai-agent", "automation", "playwright", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business",
+]
+
+dependencies = [
+    # Browser automation
+    "playwright>=1.52.0",
+    # Schema & validation
+    "pydantic>=2.11.0",
+    # Environment & config
+    "python-dotenv>=1.1.0",
+    "pyyaml>=6.0.2",
+    # Vector store
+    "chromadb>=1.0.0",
+    # Embeddings
+    "sentence-transformers>=4.1.0",
+    # Resume parsing
+    "pdfplumber>=0.11.6",
+    "python-docx>=1.1.2",
+    # LLM clients
+    "groq>=0.25.0",
+    "openai>=1.82.0",
+    "google-genai>=1.14.0",
+    # Scraping
+    "apify-client>=1.9.0",
+    "beautifulsoup4>=4.13.0",
+    "httpx>=0.28.0",
+    "requests>=2.32.0",
+    # Database
+    "sqlite-utils>=3.38",
+    # CLI & display
+    "rich>=14.0.0",
+    "click>=8.1.8",
+    # Logging
+    "structlog>=25.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.1.0",
+    "pytest-mock>=3.14.0",
+    "mypy>=1.15.0",
+    "ruff>=0.11.0",
+    "pre-commit>=4.2.0",
+    "respx>=0.22.0",
+]
+
+[project.scripts]
+jobapply = "main:cli"
+manage-profile = "manage_profile:cli"
+
+[project.urls]
+Homepage = "https://github.com/AnshulDas007/Agentic-Job-Apply-Companion"
+Repository = "https://github.com/AnshulDas007/Agentic-Job-Apply-Companion"
+Issues = "https://github.com/AnshulDas007/Agentic-Job-Apply-Companion/issues"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "TCH"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["backend"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks integration tests requiring external services",
+]
+
+[tool.coverage.run]
+source = ["backend"]
+omit = ["tests/*", "venv/*"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80
