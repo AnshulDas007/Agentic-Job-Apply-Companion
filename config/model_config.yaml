@@ -14,12 +14,12 @@ tiers:
     description: "Resume parsing → structured schema extraction"
     primary:
       provider: groq
-      model: llama-3.3-70b-versatile
+      model: qwen/qwen3.6-27b
       temperature: 0.1
       max_tokens: 4096
     fallbacks:
-      - provider: openrouter
-        model: meta-llama/llama-3.3-70b-instruct:free
+      - provider: groq
+        model: openai/gpt-oss-20b
         temperature: 0.1
         max_tokens: 4096
 
@@ -27,12 +27,12 @@ tiers:
     description: "Field-label classification (experience, project, URL, address, etc.)"
     primary:
       provider: groq
-      model: llama-3.3-70b-versatile
+      model: qwen/qwen3.6-27b
       temperature: 0.0
       max_tokens: 1024
     fallbacks:
-      - provider: openrouter
-        model: meta-llama/llama-3.3-70b-instruct:free
+      - provider: groq
+        model: openai/gpt-oss-20b
         temperature: 0.0
         max_tokens: 1024
 
@@ -41,12 +41,12 @@ tiers:
     description: "Job relevance scoring (LLM-augmented component)"
     primary:
       provider: groq
-      model: llama-3.3-70b-versatile
+      model: qwen/qwen3.6-27b
       temperature: 0.2
       max_tokens: 2048
     fallbacks:
-      - provider: openrouter
-        model: meta-llama/llama-3.3-70b-instruct:free
+      - provider: groq
+        model: openai/gpt-oss-20b
         temperature: 0.2
         max_tokens: 2048
 
@@ -54,12 +54,12 @@ tiers:
     description: "Soft-signal fraud analysis for ambiguous listings"
     primary:
       provider: groq
-      model: llama-3.3-70b-versatile
+      model: qwen/qwen3.6-27b
       temperature: 0.1
       max_tokens: 2048
     fallbacks:
-      - provider: openrouter
-        model: meta-llama/llama-3.3-70b-instruct:free
+      - provider: groq
+        model: openai/gpt-oss-20b
         temperature: 0.1
         max_tokens: 2048
 
@@ -67,34 +67,34 @@ tiers:
   cover_letter:
     description: "Cover letter generation — quality-critical, natural tone"
     primary:
-      provider: google
-      model: gemini-2.0-flash
+      provider: groq
+      model: openai/gpt-oss-120b
       temperature: 0.7
       max_tokens: 2048
     fallbacks:
-      - provider: openrouter
-        model: google/gemini-2.0-flash-exp:free
+      - provider: google
+        model: gemini-2.0-flash
         temperature: 0.7
         max_tokens: 2048
       - provider: groq
-        model: llama-3.3-70b-versatile
+        model: qwen/qwen3.6-27b
         temperature: 0.7
         max_tokens: 2048
 
   legal_review:
     description: "Legal clause extraction — must not miss binding clauses"
     primary:
-      provider: google
-      model: gemini-2.0-flash
+      provider: groq
+      model: openai/gpt-oss-120b
       temperature: 0.0
       max_tokens: 4096
     fallbacks:
-      - provider: openrouter
-        model: google/gemini-2.0-flash-exp:free
+      - provider: google
+        model: gemini-2.0-flash
         temperature: 0.0
         max_tokens: 4096
       - provider: groq
-        model: llama-3.3-70b-versatile
+        model: qwen/qwen3.6-27b
         temperature: 0.0
         max_tokens: 4096
 
