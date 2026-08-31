@@ -35,9 +35,9 @@ def test_orchestrator_fraud_filter_rejection(mock_dependencies):
     mock_dependencies["registry"].scrape_all.return_value = [job]
     
     fraud_result = MagicMock()
-    fraud_result.is_legitimate = False
-    fraud_result.hard_blocker_reason = "Payment required"
-    mock_dependencies["fraud_filter"].evaluate_job.return_value = fraud_result
+    fraud_result.passed = False
+    fraud_result.summary = "Payment required"
+    mock_dependencies["fraud_filter"].check_listing.return_value = fraud_result
     
     orchestrator = ApplicationOrchestrator(**mock_dependencies)
     report = orchestrator.run_pipeline()
@@ -52,11 +52,11 @@ def test_orchestrator_low_score_rejection(mock_dependencies):
     mock_dependencies["registry"].scrape_all.return_value = [job]
     
     fraud_result = MagicMock()
-    fraud_result.is_legitimate = True
-    mock_dependencies["fraud_filter"].evaluate_job.return_value = fraud_result
+    fraud_result.passed = True
+    mock_dependencies["fraud_filter"].check_listing.return_value = fraud_result
     
     score_result = MagicMock()
-    score_result.total_score = 0.50
+    score_result.relevance_score = 0.50
     mock_dependencies["scorer"].score_job.return_value = score_result
     
     orchestrator = ApplicationOrchestrator(min_relevance_score=0.65, **mock_dependencies)
@@ -72,11 +72,11 @@ def test_orchestrator_form_filler_blocked(mock_dependencies):
     mock_dependencies["registry"].scrape_all.return_value = [job]
     
     fraud_result = MagicMock()
-    fraud_result.is_legitimate = True
-    mock_dependencies["fraud_filter"].evaluate_job.return_value = fraud_result
+    fraud_result.passed = True
+    mock_dependencies["fraud_filter"].check_listing.return_value = fraud_result
     
     score_result = MagicMock()
-    score_result.total_score = 0.80
+    score_result.relevance_score = 0.80
     mock_dependencies["scorer"].score_job.return_value = score_result
     
     # Form filler fails (e.g., blocked by legal clause)
@@ -94,11 +94,11 @@ def test_orchestrator_tier2_held(mock_dependencies):
     mock_dependencies["registry"].scrape_all.return_value = [job]
     
     fraud_result = MagicMock()
-    fraud_result.is_legitimate = True
-    mock_dependencies["fraud_filter"].evaluate_job.return_value = fraud_result
+    fraud_result.passed = True
+    mock_dependencies["fraud_filter"].check_listing.return_value = fraud_result
     
     score_result = MagicMock()
-    score_result.total_score = 0.80
+    score_result.relevance_score = 0.80
     mock_dependencies["scorer"].score_job.return_value = score_result
     
     mock_dependencies["form_filler"].fill_form.return_value = True
@@ -115,11 +115,11 @@ def test_orchestrator_burn_in_held(mock_dependencies):
     mock_dependencies["registry"].scrape_all.return_value = [job]
     
     fraud_result = MagicMock()
-    fraud_result.is_legitimate = True
-    mock_dependencies["fraud_filter"].evaluate_job.return_value = fraud_result
+    fraud_result.passed = True
+    mock_dependencies["fraud_filter"].check_listing.return_value = fraud_result
     
     score_result = MagicMock()
-    score_result.total_score = 0.80
+    score_result.relevance_score = 0.80
     mock_dependencies["scorer"].score_job.return_value = score_result
     
     mock_dependencies["form_filler"].fill_form.return_value = True
@@ -137,11 +137,11 @@ def test_orchestrator_tier1_submitted(mock_dependencies):
     mock_dependencies["registry"].scrape_all.return_value = [job]
     
     fraud_result = MagicMock()
-    fraud_result.is_legitimate = True
-    mock_dependencies["fraud_filter"].evaluate_job.return_value = fraud_result
+    fraud_result.passed = True
+    mock_dependencies["fraud_filter"].check_listing.return_value = fraud_result
     
     score_result = MagicMock()
-    score_result.total_score = 0.80
+    score_result.relevance_score = 0.80
     mock_dependencies["scorer"].score_job.return_value = score_result
     
     mock_dependencies["form_filler"].fill_form.return_value = True

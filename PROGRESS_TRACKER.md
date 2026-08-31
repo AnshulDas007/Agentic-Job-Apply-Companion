@@ -6,11 +6,11 @@
 # and pick up exactly where it left off.
 # ============================================================
 
-## Current Phase: 7
-## Current Step: Cover Letter Generation Module
-## Status: NOT_STARTED
-## Last Completed: Phase 6 (Matching/Relevance Scoring Layer)
-## Next Action: Build backend/cover_letter/generator.py, templates, tests
+## Current Phase: DONE
+## Current Step: All Phases Complete
+## Status: COMPLETED
+## Last Completed: Phase 10 (Scheduling & Automation / Application Orchestrator)
+## Next Action: Project is fully built according to PRD! Ready for user testing and usage.
 ## Blockers: None
 
 ## Completed Phases:
@@ -20,6 +20,10 @@
 - Phase 4: Scraping layer (Apify, Greenhouse/Lever/Ashby ATS, YC Jobs), job schema, scraper registry, tests
 - Phase 5: Fraud filter (hard blockers + soft-signal scoring), signal checkers, tests
 - Phase 6: Matching layer (embeddings via sentence-transformers, ChromaDB vector store, multi-signal relevance scorer with skill/experience/location/embedding scoring), tests
+- Phase 7: Cover letter generation (mandatory-only, banned-phrase enforcement, real profile data), tests
+- Phase 8: Legal review module (rule-based and LLM-based clause detection, consent element classification, e-signature exceptions), tests
+- Phase 9: Form filling layer (strict separation of experience/projects, field classification, value mapping, duration buckets), tests
+- Phase 10: Scheduling & Automation (Application Orchestrator, tier 1/2 platform routing, burn-in mode, daily digest generation), tests
 
 ## Files Created:
 - .gitignore
@@ -33,6 +37,7 @@
 - backend/__init__.py
 - backend/model_router.py
 - backend/cost_tracker.py
+- backend/orchestrator.py
 - backend/parsing/__init__.py
 - backend/parsing/profile_schema.py
 - backend/parsing/profile_store.py
@@ -50,10 +55,14 @@
 - backend/matching/embeddings.py
 - backend/matching/vector_store.py
 - backend/matching/scorer.py
-- backend/form_filler/__init__.py
-- backend/form_filler/ats_handlers/__init__.py
 - backend/cover_letter/__init__.py
+- backend/cover_letter/generator.py
 - backend/legal_review/__init__.py
+- backend/legal_review/reviewer.py
+- backend/form_filler/__init__.py
+- backend/form_filler/classifier.py
+- backend/form_filler/field_mapper.py
+- backend/form_filler/filler.py
 - config/model_config.yaml
 - config/app_config.yaml
 - config/matching_config.yaml
@@ -64,7 +73,13 @@
 - tests/test_scrapers.py
 - tests/test_fraud_filter.py
 - tests/test_matching.py
+- tests/test_cover_letter.py
+- tests/test_legal_review.py
+- tests/test_form_filler.py
+- tests/test_orchestrator.py
 - PROGRESS_TRACKER.md
+- Project_Requirement_Doc(PRD).md
+- Project_Architecture.md
 
 ## Commit History:
 - chore: project scaffolding, environment config, and dependency pinning
@@ -78,8 +93,16 @@
 - feat: fraud filter with hard-blocker and scored legitimacy checks
 - test: fraud filter hard-blocker detection and soft-signal scoring
 - feat: matching/relevance scoring layer with embeddings, vector store, and multi-signal scorer
+- test: matching layer — skill scoring, embeddings, vector store, and relevance scorer
+- feat: cover letter generator with banned-phrase enforcement and mandatory-only generation
+- test: cover letter generation rules, banned phrases, and mocked LLM integration
+- feat: legal review module with clause detection and consent element classification
+- test: legal review module clauses and consent classification
+- feat: form filling layer with strict experience separation and legal checks
+- test: form filling layer, mapping, and verification tests
+- feat: application orchestrator with tier scheduling and burn-in mode
 
-## Test Results: 134/134 passing
+## Test Results: 220/220 passing
 
 ## User Details Collected:
 - Name: Anshul Das
@@ -92,15 +115,9 @@
 - LLM keys: Groq API key configured in .env
 - Apify token: User has it (needed for Apify scrapers, not yet in .env)
 
-## Model Config Notes:
-- Groq models updated to current availability: qwen/qwen3.6-27b (small/mid), openai/gpt-oss-120b (best)
-- llama-3.3-70b-versatile is no longer available on Groq
-- Live Groq integration test confirmed working
-
-## Phase 6 Architecture Notes:
-- EmbeddingManager: lazy-loads sentence-transformers all-MiniLM-L6-v2 (~80MB)
-- VectorStore: ChromaDB PersistentClient with cosine distance, deduplication via URL hash
-- RelevanceScorer: 4-signal weighted scoring (embedding_similarity=0.40, skill_match=0.30, experience_relevance=0.20, location_fit=0.10)
-- Two-stage pipeline: fast embedding pre-filter (threshold=0.35) then full scoring
-- ChromaDB 1.0+ compatibility: metadata always non-empty dict
-- Skill normalization with 20+ aliases (JS→javascript, k8s→kubernetes, etc.)
+## Phase 10 Architecture Notes:
+- ApplicationOrchestrator brings together scraper registry, fraud filter, relevance scorer, and form filler.
+- Implements Tier logic: Tier 1 (ATS) uses unattended submission (when not in burn-in mode).
+- Tier 2 (LinkedIn/Indeed/Naukri) triggers "held_for_human" to avoid ban risks.
+- Burn-in mode is explicitly supported.
+- Generates a text daily digest detailing processed, submitted, held, and rejected jobs.

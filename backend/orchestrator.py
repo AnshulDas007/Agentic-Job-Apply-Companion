@@ -80,18 +80,18 @@ class ApplicationOrchestrator:
             }
             
             # 2. Fraud Filter
-            fraud_result = self.fraud_filter.evaluate_job(job.description, job.company, job.url)
-            if not fraud_result.is_legitimate:
+            fraud_result = self.fraud_filter.check_listing(job)
+            if not fraud_result.passed:
                 job_report["status"] = "rejected"
-                job_report["reason"] = f"Fraud Filter Failed: {fraud_result.hard_blocker_reason}"
+                job_report["reason"] = f"Fraud Filter Failed: {fraud_result.summary}"
                 report.append(job_report)
                 continue
                 
             # 3. Matching
-            score_result = self.scorer.score_job(job, self.profile)
-            if score_result.total_score < self.min_relevance_score:
+            score_result = self.scorer.score_job(self.profile, job)
+            if score_result.relevance_score < self.min_relevance_score:
                 job_report["status"] = "rejected"
-                job_report["reason"] = f"Low Relevance Score: {score_result.total_score:.2f}"
+                job_report["reason"] = f"Low Relevance Score: {score_result.relevance_score:.2f}"
                 report.append(job_report)
                 continue
                 
