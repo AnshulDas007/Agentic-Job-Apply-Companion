@@ -66,63 +66,52 @@ flowchart TB
 
 ---
 
-## Data Flow
+## Data Flow — GitHub Actions + Issues
 
 ```mermaid
 sequenceDiagram
-    participant User
-    participant CLI as main.py
-    participant Parser as Resume Parser
+    participant Actions as GitHub Actions
+    participant Pipeline as run_pipeline.py
     participant Store as Profile Store
     participant Scrapers as Job Scrapers
     participant Fraud as Fraud Filter
     participant Scorer as Relevance Scorer
+    participant Issues as GitHub Issues
+    participant User
     participant Filler as Form Filler
-    participant Legal as Legal Review
-    participant CoverLetter as Cover Letter
-    participant DB as SQLite DB
 
-    Note over User,CLI: First Run (Intake)
-    User->>CLI: python main.py intake --resume resume.pdf
-    CLI->>Parser: Parse resume
-    Parser->>Store: Save CandidateProfile
-    Store-->>CLI: Gap check results
-    CLI->>User: Ask missing fields (once)
-    User->>CLI: Provide answers
-    CLI->>Store: Update profile (never ask again)
+    Note over Actions,Pipeline: Phase 1: scrape-and-score (daily cron)
+    Actions->>Pipeline: python run_pipeline.py scrape-and-score
+    Pipeline->>Store: Load CandidateProfile + jobs_seen.json
+    Pipeline->>Scrapers: Scrape job listings
+    Scrapers-->>Pipeline: Raw listings
 
-    Note over User,CLI: Regular Run (Apply Cycle)
-    User->>CLI: python main.py run
-    CLI->>Store: Load CandidateProfile
-    CLI->>Scrapers: Scrape job listings
-    Scrapers-->>CLI: Raw listings
-    
-    loop For each listing
-        CLI->>Fraud: Check legitimacy
-        Fraud-->>CLI: Pass/Fail + score
+    loop For each new listing (not in jobs_seen)
+        Pipeline->>Fraud: Check legitimacy
+        Fraud-->>Pipeline: Pass/Fail + score
         alt Passed fraud filter
-            CLI->>Scorer: Score relevance
-            Scorer-->>CLI: Match score + breakdown
+            Pipeline->>Scorer: Score relevance
+            Scorer-->>Pipeline: Match score
             alt Score >= threshold
-                CLI->>Filler: Classify fields + fill form
-                Filler->>Filler: Verification diff-check
-                CLI->>Legal: Scan for legal clauses
-                Legal-->>CLI: Clauses found?
-                alt Has mandatory cover letter
-                    CLI->>CoverLetter: Generate from real details
-                    CoverLetter-->>CLI: Draft for review
-                end
-                alt Tier 1 (ATS) + burn-in cleared
-                    CLI->>DB: Submit + log
-                else Tier 2 or burn-in active
-                    CLI->>DB: Hold for review + log
-                    CLI->>User: Notification
-                end
+                Pipeline->>Issues: Open Issue (scores, cover letter, legal flags)
             end
         end
     end
-    
-    CLI->>DB: Generate daily digest
+
+    Pipeline->>Actions: Commit updated jobs_seen.json
+    Pipeline->>Issues: Post run summary on Run Log Issue
+
+    Note over User,Issues: Review (GitHub web/mobile)
+    User->>Issues: Label 'approve' or 'reject'
+
+    Note over Actions,Pipeline: Phase 2: apply-tier1 (daily cron, 2h later)
+    Actions->>Pipeline: python run_pipeline.py apply-tier1
+    Pipeline->>Issues: Fetch Issues labeled 'approve' + 'tier1-ats'
+    loop For each approved job
+        Pipeline->>Filler: Fill form via Playwright
+        Pipeline->>Issues: Close Issue with outcome comment
+    end
+    Pipeline->>Actions: Commit updated jobs_seen.json
 ```
 
 ---
@@ -186,15 +175,17 @@ sequenceDiagram
 | Legal Reviewer | `backend/legal_review/reviewer.py` | Clause extraction, plain-language summary, consent detection |
 | Clause Patterns | `backend/legal_review/clause_patterns.py` | Regex + keyword patterns for legal terms |
 
-### Orchestration Layer
+### Orchestration & Execution Layer
 
 | Component | File | Responsibility |
 |---|---|---|
-| Pipeline | `backend/pipeline.py` | Full orchestration: scrape → filter → score → fill → review → submit/hold |
-| Database | `backend/database.py` | SQLite wrapper: applications, jobs, usage, audit tables with migrations |
-| Digest | `backend/digest.py` | Daily activity summary generation |
-| Main CLI | `main.py` | Entry point: `intake`, `run`, `status`, `review` subcommands |
-| Scheduler | `schedule.py` | Cron-based scheduling for Tier 1 auto-apply |
+| Orchestrator | `backend/orchestrator.py` | Two-phase pipeline: `run_scrape_and_score()` + `run_apply_tier1()`, dedupe via `jobs_seen.json` |
+| Issues Manager | `backend/issues_review/github_issues.py` | GitHub Issues API: open/read/label/close Issues as the review interface |
+| Pipeline Runner | `run_pipeline.py` | GitHub Actions entry point: `scrape-and-score` and `apply-tier1` subcommands |
+| Database | `backend/database.py` | SQLite wrapper: applications, jobs, usage, audit tables |
+| Local CLI | `main.py` | Local commands: `intake`, `status`, `profile` |
+| Scrape Workflow | `.github/workflows/scrape-and-score.yml` | Daily cron: scrape → filter → score → open Issues → commit state |
+| Apply Workflow | `.github/workflows/apply-tier1.yml` | Daily cron: read approved Issues → apply → close → commit state |
 
 ---
 
@@ -254,10 +245,33 @@ erDiagram
 
 ---
 
+## Execution Model
+
+This project runs entirely on **GitHub Actions** — no local machine, no dedicated server, no custom web app.
+
+- **State persistence**: `data/jobs_seen.json` and `data/candidate_profile.json` are committed back to the repo after each workflow run via `stefanzweifel/git-auto-commit-action`
+- **Review interface**: GitHub Issues — users approve/reject jobs by labeling Issues from the GitHub web UI or mobile app
+- **Secrets**: API keys are added via Repo → Settings → Secrets and variables → Actions, never committed
+- **Burn-in**: First 2 weeks, `apply-tier1` runs with `--burn-in` flag (dry-run mode)
+
+---
+
+## Cost Tracking
+
+| Service | Free Tier | Notes |
+|---|---|---|
+| GitHub Actions | 2,000 min/mo (private), unlimited (public) | A daily scrape + apply run uses ~5-10 min total |
+| Groq | 14,400 req/day | Primary LLM for parsing, classification, scoring |
+| Apify | $5/mo platform credit | LinkedIn, Indeed, Naukri scraping |
+| Google AI Studio | 60 req/min | Cover letters, legal review |
+
+---
+
 ## Security Model
 
-- **Secrets**: All API keys in `.env`, never committed, loaded via `python-dotenv`
-- **PII**: Candidate profile and scraped data in `data/` (gitignored), never committed
-- **Legal**: All consent/legal checkboxes require explicit human action — no auto-acceptance
+- **Secrets**: All API keys in Repo → Settings → Secrets (for Actions) or `.env` (for local), never committed
+- **PII**: `data/candidate_profile.json` is committed but contains only professional info; sensitive data stays in `.env`
+- **State files**: `data/jobs_seen.json` contains only job IDs and timestamps, no PII
+- **Legal**: All consent/legal checkboxes require explicit human action via Issue labels — no auto-acceptance
 - **Audit**: Every action logged with timestamp, target, and result for traceability
 - **Platform Safety**: LinkedIn/Indeed/Naukri always require human click to avoid account bans

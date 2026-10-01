@@ -1,12 +1,14 @@
 """
-main.py — CLI entry point for Agentic-JobApply-Companion.
+main.py — CLI entry point for Agentic-JobApply-Companion (local commands).
 
 Subcommands:
   intake   - Parse a resume and create/update the candidate profile
-  run      - Execute the full application pipeline
-  status   - Show recent application statistics
-  review   - Show applications held for human review
-  profile  - View or edit the stored profile
+  status   - Show recent application statistics from the database
+  profile  - View the stored candidate profile
+
+The main pipeline (scrape → score → apply) runs on GitHub Actions.
+See run_pipeline.py for the Actions entry point, and .github/workflows/
+for the workflow definitions.
 """
 
 import logging
@@ -104,96 +106,6 @@ def _apply_gap_value(profile, gap_name: str, value: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# run — Execute the full pipeline
-# ---------------------------------------------------------------------------
-
-@cli.command()
-@click.option(
-    "--platforms", "-p",
-    multiple=True,
-    help="Platforms to scrape (e.g., greenhouse, linkedin). Omit for all.",
-)
-@click.option(
-    "--burn-in/--no-burn-in",
-    default=True,
-    help="Enable burn-in mode (hold all for review).",
-)
-@click.option(
-    "--min-score",
-    type=float,
-    default=0.65,
-    help="Minimum relevance score threshold.",
-)
-def run(platforms: tuple, burn_in: bool, min_score: float) -> None:
-    """Execute the full job application pipeline."""
-    from backend.database import Database
-    from backend.fraud_filter.filter import FraudFilter
-    from backend.matching.scorer import RelevanceScorer
-    from backend.form_filler.filler import FormFiller
-    from backend.orchestrator import ApplicationOrchestrator, generate_daily_digest
-    from backend.parsing.profile_store import load_profile
-    from backend.scrapers.scraper_registry import ScraperRegistry
-
-    # Load profile
-    profile = load_profile()
-    if not profile:
-        click.echo("❌ No profile found. Run 'intake' first.", err=True)
-        sys.exit(1)
-
-    click.echo(f"👤 Loaded profile: {profile.name}")
-    click.echo(f"🔧 Burn-in mode: {'ON' if burn_in else 'OFF'}")
-    click.echo(f"📊 Min relevance score: {min_score}")
-
-    if platforms:
-        click.echo(f"🎯 Platforms: {', '.join(platforms)}")
-    else:
-        click.echo("🎯 Platforms: all configured")
-
-    # Initialize modules
-    registry = ScraperRegistry()
-    fraud_filter = FraudFilter()
-    scorer = RelevanceScorer()
-    form_filler = FormFiller()
-    db = Database()
-
-    orchestrator = ApplicationOrchestrator(
-        profile=profile,
-        registry=registry,
-        fraud_filter=fraud_filter,
-        scorer=scorer,
-        form_filler=form_filler,
-        min_relevance_score=min_score,
-        burn_in_mode=burn_in,
-    )
-
-    # Run pipeline
-    click.echo("\n🚀 Starting pipeline...")
-    platform_list = list(platforms) if platforms else None
-    report = orchestrator.run_pipeline(platforms=platform_list)
-
-    # Log to database
-    for entry in report:
-        db.log_audit(
-            action="pipeline_run",
-            target=f"{entry['job_title']} at {entry['company']}",
-            details=entry.get("reason", ""),
-            result=entry["status"],
-        )
-
-    # Generate and display digest
-    digest = generate_daily_digest(report)
-    click.echo(f"\n{digest}")
-
-    # Save digest to file
-    digest_path = Path("data/daily_digest.txt")
-    digest_path.parent.mkdir(exist_ok=True)
-    digest_path.write_text(digest, encoding="utf-8")
-    click.echo(f"\n📋 Digest saved to {digest_path}")
-
-    db.close()
-
-
-# ---------------------------------------------------------------------------
 # status — Show pipeline statistics
 # ---------------------------------------------------------------------------
 
@@ -254,51 +166,6 @@ def status(limit: int) -> None:
 
 
 # ---------------------------------------------------------------------------
-# review — Show held applications
-# ---------------------------------------------------------------------------
-
-@cli.command()
-def review() -> None:
-    """Show applications held for human review."""
-    from backend.database import Database
-
-    db = Database()
-
-    # Get held applications
-    held = db.get_applications(status="held_for_human")
-    pending = db.get_applications(status="pending")
-    review_required = db.get_applications(status="review_required")
-
-    all_review = held + pending + review_required
-
-    if not all_review:
-        click.echo("✅ No applications pending review.")
-        db.close()
-        return
-
-    click.echo(f"📋 Applications Pending Review: {len(all_review)}")
-    click.echo("=" * 60)
-
-    for i, app in enumerate(all_review, 1):
-        job = db.get_job(app["job_id"])
-        job_title = job["title"] if job else "Unknown"
-        company = job["company"] if job else "Unknown"
-        url = job["url"] if job else ""
-
-        click.echo(f"\n{i}. {job_title} at {company}")
-        click.echo(f"   Status: {app['status']}")
-        click.echo(f"   Tier: {app.get('tier', 'N/A')}")
-        if url:
-            click.echo(f"   URL: {url}")
-        if app.get("notes"):
-            click.echo(f"   Notes: {app['notes']}")
-        if app.get("legal_review_summary"):
-            click.echo(f"   Legal: {app['legal_review_summary'][:100]}")
-
-    db.close()
-
-
-# ---------------------------------------------------------------------------
 # profile — View stored profile
 # ---------------------------------------------------------------------------
 
@@ -344,3 +211,4 @@ def profile() -> None:
 
 if __name__ == "__main__":
     cli()
+

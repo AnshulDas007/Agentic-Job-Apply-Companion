@@ -16,10 +16,40 @@ A semi-autonomous AI agent that handles the repetitive, error-prone parts of job
 2. **Scrapes job listings** from LinkedIn, Indeed, Naukri, Wellfound, ZipRecruiter, Y Combinator, and company career pages (Greenhouse, Lever, Workday, Ashby)
 3. **Filters out fraud** — registration fees, fake companies, WhatsApp-only hiring, and other red flags are automatically blocked
 4. **Scores relevance** — embedding similarity + LLM-augmented matching against your actual skills and experience
-5. **Fills application forms** with strict data separation — experience stays in experience fields, projects stay in project fields, contact info stays in contact fields. No cross-contamination.
-6. **Generates cover letters** only when required, built from your real project details — never generic AI filler
-7. **Surfaces legal clauses** — arbitration, non-compete, IP assignment, background checks are flagged for your review before any submission
-8. **Auto-applies on safe-tier sites** (Greenhouse, Lever, etc.) after a burn-in period; LinkedIn/Indeed/Naukri always require your click
+5. **Opens GitHub Issues** for every qualifying job — with match scores, fraud results, cover letter drafts, and legal flags — so you review and approve from your phone or browser
+6. **Auto-applies on safe-tier sites** (Greenhouse, Lever, etc.) after you label an Issue `approve`; LinkedIn/Indeed/Naukri always flag as "manual apply required"
+7. **Generates cover letters** only when required, built from your real project details — never generic AI filler
+8. **Surfaces legal clauses** — arbitration, non-compete, IP assignment, background checks are flagged for your review before any submission
+
+---
+
+## How It Works — GitHub Actions + Issues
+
+This project runs **entirely on GitHub Actions** — no local machine needs to stay on, no dedicated server, no custom web app. **GitHub Issues is the review interface.**
+
+```
+Daily Schedule (GitHub Actions)
+┌──────────────────────┐     ┌───────────────────────┐
+│ scrape-and-score.yml │────▶│   GitHub Issues        │
+│ (9:00 AM UTC daily)  │     │   (your review inbox)  │
+│                      │     │                        │
+│ • Scrape listings    │     │ You label:             │
+│ • Fraud filter       │     │   approve → auto-apply │
+│ • Score relevance    │     │   reject  → skip       │
+│ • Open Issues        │     └───────────┬────────────┘
+└──────────────────────┘                 │
+                                         ▼
+                            ┌───────────────────────┐
+                            │ apply-tier1.yml        │
+                            │ (11:00 AM UTC daily)   │
+                            │                        │
+                            │ • Read approved Issues  │
+                            │ • Apply via Playwright  │
+                            │ • Close with outcome   │
+                            └───────────────────────┘
+```
+
+**Tier 2 (LinkedIn/Indeed/Naukri)** stays manual — Issues are opened with all the details (scores, cover letter, legal flags) so you can apply yourself using the pre-filled drafts.
 
 ---
 
@@ -34,7 +64,7 @@ A semi-autonomous AI agent that handles the repetitive, error-prone parts of job
 | 5 | Never generate a cover letter unless the form requires one |
 | 6 | Never auto-apply on LinkedIn/Indeed/Naukri without a human click |
 | 7 | Never apply to a listing that failed the fraud filter |
-| 8 | Never commit secrets — `.env` stays local and gitignored |
+| 8 | Never commit secrets — API keys live in Repo → Settings → Secrets |
 | 9 | Never re-ask for information already captured — profile store is single source of truth |
 | 10 | Always log what was submitted and why, for audit |
 
@@ -46,70 +76,73 @@ A semi-autonomous AI agent that handles the repetitive, error-prone parts of job
 |---|---|---|
 | Language | Python 3.11+ | Free |
 | Browser Automation | Playwright | Free |
-| LLM Access | Groq, OpenRouter, Gemini (config-driven router) | Free tier |
+| LLM Access | Groq, Gemini (config-driven router) | Free tier |
 | Vector Store | ChromaDB | Free |
 | Database | SQLite | Free |
 | Scraping | Apify (LinkedIn/Naukri) + direct scraping (ATS/YC) | $5/mo free tier |
-| Scheduling | cron / GitHub Actions | Free |
+| Execution | GitHub Actions | Free (2,000 min/mo private, unlimited public) |
+| Review Interface | GitHub Issues | Free |
 
 **Total recurring cost: $0** at personal scale.
 
 ---
 
-## Quick Start
+## Getting Started
 
-### Prerequisites
-
-- Python 3.11 or higher
-- At least one LLM API key ([Groq](https://console.groq.com) recommended — free, 14,400 req/day)
-
-### Setup
+### 1. Fork / Clone
 
 ```bash
-# Clone the repository
 git clone https://github.com/AnshulDas007/Agentic-Job-Apply-Companion.git
 cd Agentic-Job-Apply-Companion
-
-# Full setup (venv + dependencies + Playwright browsers)
-make setup
-
-# Activate the virtual environment
-source venv/bin/activate
-
-# Copy and configure environment variables
-cp .env.example .env
-# Edit .env with your API keys (at minimum: GROQ_API_KEY)
 ```
 
-### First Run — Profile Intake
+### 2. Add Secrets
+
+Go to **Repo → Settings → Secrets and variables → Actions** and add:
+
+| Secret Name | Description | Required |
+|---|---|---|
+| `GROQ_API_KEY` | [Groq](https://console.groq.com) API key (free, 14,400 req/day) | ✅ |
+| `GOOGLE_AI_API_KEY` | [Google AI Studio](https://aistudio.google.com) API key (free, 60 req/min) | ✅ |
+| `APIFY_TOKEN` | [Apify](https://apify.com) API token (free $5/mo credit) | ✅ |
+
+> `GITHUB_TOKEN` is automatically provided by GitHub Actions — you don't need to set it.
+
+### 3. Create Your Profile
 
 ```bash
-# Parse your resume and build your candidate profile
-make intake
-# or: python main.py intake --resume path/to/your/resume.pdf
+# Local setup (one-time)
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
 
-# View your profile
-python manage_profile.py view
+# Parse your resume
+python main.py intake --resume path/to/resume.pdf
 
-# Edit a field if needed
-python manage_profile.py edit
+# Verify your profile
+python main.py profile
 ```
 
-### Running the Agent
+Commit `data/candidate_profile.json` to the repo — the Actions workflows read it from there.
 
-```bash
-# Run a scrape + match + apply cycle
-make run
-# or: python main.py run
+### 4. Push → Workflows Run Automatically
 
-# Check recent activity
-make status
-# or: python main.py status
+The `scrape-and-score` workflow runs daily at 9:00 AM UTC. You can also trigger it manually from **Actions → Daily Job Scrape and Score → Run workflow**.
 
-# Review pending applications (Tier 2 / burn-in holds)
-make review
-# or: python main.py review
-```
+### 5. Review Issues, Label, Done
+
+- Open Issues appear with job details, scores, cover letter drafts, and legal flags
+- Label `approve` on Tier 1 jobs to auto-apply
+- Tier 2 jobs (LinkedIn/Indeed) are flagged "manual apply required" — use the details to apply yourself
+
+---
+
+## Required Secrets
+
+| Secret | Where to Get It | What It's For |
+|---|---|---|
+| `GROQ_API_KEY` | [console.groq.com](https://console.groq.com) | Resume parsing, field classification, scoring |
+| `GOOGLE_AI_API_KEY` | [aistudio.google.com](https://aistudio.google.com) | Cover letters, legal clause review |
+| `APIFY_TOKEN` | [apify.com](https://apify.com) | Scraping LinkedIn, Indeed, Naukri listings |
 
 ---
 
@@ -117,36 +150,34 @@ make review
 
 ```
 Agentic-Job-Apply-Companion/
+├── .github/workflows/
+│   ├── scrape-and-score.yml     # Daily scrape → filter → score → open Issues
+│   └── apply-tier1.yml          # Apply to approved company-site listings
 ├── backend/
-│   ├── scrapers/              # Apify + direct scraping modules
-│   ├── parsing/               # Resume → CandidateProfile schema
-│   ├── matching/              # Relevance scoring + vector similarity
-│   ├── fraud_filter/          # Legitimacy checks (hard blockers + soft signals)
-│   ├── form_filler/           # Playwright automation + field classification
-│   │   └── ats_handlers/      # Platform-specific adapters
-│   ├── cover_letter/          # Conditional generation module
-│   ├── legal_review/          # Clause extraction + summarization
-│   ├── model_router.py        # Config-driven LLM routing
-│   ├── database.py            # SQLite wrapper + audit logging
-│   ├── cost_tracker.py        # LLM token + Apify cost tracking
-│   ├── pipeline.py            # Main orchestration pipeline
-│   └── digest.py              # Daily activity digest
-├── config/                    # YAML configuration files
-├── data/                      # (gitignored) Profile, logs, scraped data
-├── logs/                      # (gitignored) Application logs
-├── tests/                     # Comprehensive test suite
-├── .github/workflows/         # CI/CD + scheduled auto-apply
-├── .env.example               # Environment template
-├── .gitignore
-├── Dockerfile
-├── docker-compose.yml
-├── Makefile
-├── pyproject.toml
-├── requirements.txt
-├── requirements-dev.txt
-├── main.py                    # CLI entry point
-├── manage_profile.py          # Profile management CLI
-├── schedule.py                # Cron scheduling helper
+│   ├── scrapers/                # Apify + direct scraping modules
+│   ├── parsing/                 # Resume → CandidateProfile schema
+│   ├── matching/                # Relevance scoring + vector similarity
+│   ├── fraud_filter/            # Legitimacy checks (hard blockers + soft signals)
+│   ├── form_filler/             # Playwright automation + field classification
+│   │   └── ats_handlers/        # Platform-specific adapters
+│   ├── cover_letter/            # Conditional generation module
+│   ├── legal_review/            # Clause extraction + summarization
+│   ├── issues_review/           # GitHub Issues API — open/read/label/close
+│   ├── model_router.py          # Config-driven LLM routing
+│   ├── orchestrator.py          # Two-phase pipeline (scrape+score / apply)
+│   ├── database.py              # SQLite wrapper + audit logging
+│   └── cost_tracker.py          # LLM token + Apify cost tracking
+├── config/                      # YAML configuration files
+├── data/
+│   ├── jobs_seen.json           # Dedupe log (committed by Actions bot)
+│   └── candidate_profile.json   # Your profile (committed once)
+├── tests/                       # Comprehensive test suite
+├── run_pipeline.py              # GitHub Actions entry point
+├── main.py                      # Local CLI (intake, status, profile)
+├── manage_profile.py            # Profile management CLI
+├── pyproject.toml               # Project metadata + tool config
+├── requirements.txt             # Pinned dependencies
+├── .env.example                 # Environment template
 ├── Project_Architecture.md
 ├── Project_Requirement_Doc(PRD).md
 └── README.md
@@ -154,50 +185,44 @@ Agentic-Job-Apply-Companion/
 
 ---
 
-## Model Routing Strategy
-
-Tasks are routed to different model tiers based on stakes, not one model for everything:
-
-| Task | Model Tier | Default Provider |
-|---|---|---|
-| Resume parsing | Small | Groq (Llama) |
-| Field classification | Small/Mid | Groq (Llama) |
-| Job relevance scoring | Small/Mid + Embeddings | Groq + sentence-transformers |
-| Cover letter generation | Best available | Gemini / Claude |
-| Legal clause review | Best available | Gemini / Claude |
-
-Configure in [`config/model_config.yaml`](config/model_config.yaml) — swap providers without touching code.
-
----
-
 ## Automation Tiers
 
 | Tier | Platforms | Behavior |
 |---|---|---|
-| **Tier 1** | Greenhouse, Lever, Workday, Ashby, direct career pages | Auto-submit after burn-in period |
-| **Tier 2** | LinkedIn, Indeed, Naukri | Always requires human click (permanent — ToS/ban risk) |
+| **Tier 1** | Greenhouse, Lever, Workday, Ashby, direct career pages | Auto-apply after `approve` label |
+| **Tier 2** | LinkedIn, Indeed, Naukri | Always manual — Issue provides pre-filled details |
 
-**Burn-in period (first 2 weeks):** All applications held for review. Switch to unattended only when verification failures reach zero.
+**Burn-in period (first 2 weeks):** The `apply-tier1` workflow runs with `--burn-in` flag, logging what it *would* apply to without actually submitting. Verify the fraud filter, scoring, and cover letters are correct before removing the flag.
+
+---
+
+## Cost Tracking
+
+| Service | Free Tier | Monitor At |
+|---|---|---|
+| GitHub Actions | 2,000 min/mo (private), unlimited (public) | Repo → Settings → Actions → Usage |
+| Groq | 14,400 req/day | [console.groq.com](https://console.groq.com) |
+| Apify | $5/mo platform credit | [apify.com/account](https://apify.com) |
+| Google AI Studio | 60 req/min | [aistudio.google.com](https://aistudio.google.com) |
 
 ---
 
 ## Development
 
 ```bash
+# Setup
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+pip install -e '.[dev]'
+
 # Run tests
-make test
+python -m pytest tests/ -v
 
-# Run tests with coverage
-make test-cov
+# Lint
+ruff check .
 
-# Lint + type check
-make lint
-
-# Auto-format code
-make format
-
-# Clean build artifacts
-make clean
+# Type check
+mypy backend/
 ```
 
 ---
