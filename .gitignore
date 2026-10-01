@@ -23,8 +23,14 @@ venv/
 .venv/
 env/
 
-# --- Data (PII, profiles, scraped jobs — NEVER commit) ---
-data/
+# --- Data (selective tracking for stateless Actions runs) ---
+# Ignore everything in data/ by default …
+data/*
+# … except the state files that Actions commits back:
+!data/jobs_seen.json
+!data/candidate_profile.json
+
+# Logs
 logs/
 
 # --- Database ---
@@ -50,12 +56,12 @@ htmlcov/
 playwright-report/
 test-results/
 
-# --- Build Progress Tracker (local only) ---
+# --- Agent working memory (local only, never committed) ---
 PROGRESS_TRACKER.md
-
-# --- Docker ---
-docker-compose.override.yml
+IMPLEMENTATION_PLAN.md
+TASK_STATUS.md
 
 # --- OS ---
 Thumbs.db
 ehthumbs.db
+

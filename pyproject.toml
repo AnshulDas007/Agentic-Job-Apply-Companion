@@ -24,38 +24,7 @@ classifiers = [
     "Topic :: Office/Business",
 ]
 
-dependencies = [
-    # Browser automation
-    "playwright>=1.52.0",
-    # Schema & validation
-    "pydantic>=2.11.0",
-    # Environment & config
-    "python-dotenv>=1.1.0",
-    "pyyaml>=6.0.2",
-    # Vector store
-    "chromadb>=1.0.0",
-    # Embeddings
-    "sentence-transformers>=4.1.0",
-    # Resume parsing
-    "pdfplumber>=0.11.6",
-    "python-docx>=1.1.2",
-    # LLM clients
-    "groq>=0.25.0",
-    "openai>=1.82.0",
-    "google-genai>=1.14.0",
-    # Scraping
-    "apify-client>=1.9.0",
-    "beautifulsoup4>=4.13.0",
-    "httpx>=0.28.0",
-    "requests>=2.32.0",
-    # Database
-    "sqlite-utils>=3.38",
-    # CLI & display
-    "rich>=14.0.0",
-    "click>=8.1.8",
-    # Logging
-    "structlog>=25.1.0",
-]
+dynamic = ["dependencies"]  # managed in requirements.txt
 
 [project.optional-dependencies]
 dev = [
