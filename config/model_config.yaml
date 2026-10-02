@@ -14,7 +14,7 @@ tiers:
     description: "Resume parsing → structured schema extraction"
     primary:
       provider: groq
-      model: qwen/qwen3.6-27b
+      model: qwen/qwen3.8-27b
       temperature: 0.1
       max_tokens: 4096
     fallbacks:
@@ -27,7 +27,7 @@ tiers:
     description: "Field-label classification (experience, project, URL, address, etc.)"
     primary:
       provider: groq
-      model: qwen/qwen3.6-27b
+      model: qwen/qwen3.8-27b
       temperature: 0.0
       max_tokens: 1024
     fallbacks:
@@ -41,7 +41,7 @@ tiers:
     description: "Job relevance scoring (LLM-augmented component)"
     primary:
       provider: groq
-      model: qwen/qwen3.6-27b
+      model: qwen/qwen3.8-27b
       temperature: 0.2
       max_tokens: 2048
     fallbacks:
@@ -54,7 +54,7 @@ tiers:
     description: "Soft-signal fraud analysis for ambiguous listings"
     primary:
       provider: groq
-      model: qwen/qwen3.6-27b
+      model: qwen/qwen3.8-27b
       temperature: 0.1
       max_tokens: 2048
     fallbacks:
@@ -77,7 +77,7 @@ tiers:
         temperature: 0.7
         max_tokens: 2048
       - provider: groq
-        model: qwen/qwen3.6-27b
+        model: qwen/qwen3.8-27b
         temperature: 0.7
         max_tokens: 2048
 
@@ -94,7 +94,7 @@ tiers:
         temperature: 0.0
         max_tokens: 4096
       - provider: groq
-        model: qwen/qwen3.6-27b
+        model: qwen/qwen3.8-27b
         temperature: 0.0
         max_tokens: 4096
 

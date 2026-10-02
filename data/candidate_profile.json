@@ -1,0 +1,123 @@
+{
+  "name": "Anshul Das",
+  "contact": {
+    "address": "Bilaspur, Chhattisgarh, India",
+    "github_url": "https://github.com/AnshulDas007",
+    "linkedin_url": "https://www.linkedin.com/in/anshul-das-0b8a59270/",
+    "email": "anshuldas31@gmail.com",
+    "phone": "+91-8093077367"
+  },
+  "experience": [
+    {
+      "type": "internship",
+      "title": "ML Intern",
+      "company": "Praj Industries",
+      "duration_months": 7,
+      "start_date": "2025-06",
+      "end_date": "2025-12",
+      "description": "Engineered AI/ML optimization models for 2 industrial biorefinery processes integrating process modeling, data analytics, and domain expertise. Built Deep ANN (8-10-1, TF/Keras) for bioethanol yield prediction achieving Val R2> 0.96 and Test R2\u2248 0.92. Implemented RF, SVR, Gradient Boosting ensembles with cross-validation, improving lactic acid recovery yield by \u223c12% at industrial scale. Performed ANN techno-economic optimization enabling +1.0\u00b0GL alcohol gain and INR \u223c74L/year in projected cost savings.",
+      "is_fresher_relevant": true
+    },
+    {
+      "type": "internship",
+      "title": "Summer Intern",
+      "company": "South Eastern Coalfields Ltd. (SECL)",
+      "duration_months": 3,
+      "start_date": "2024-05",
+      "end_date": "2024-07",
+      "description": "Processed and analyzed apprentice stipend datasets using Python (Pandas) and Excel, reducing manual effort by 40% and improving accuracy. Designed 3+ data visualization dashboards to surface payment trends, delays, and anomalies, cutting manual review time for the finance team. Automated recurring workflows using Python scripts and documentation, reducing processing time across 5+ operational task categories.",
+      "is_fresher_relevant": true
+    }
+  ],
+  "projects": [
+    {
+      "name": "Agentic Deep-Research Copilot",
+      "description": "Developed an AI-based research assistant using FastAPI and LangGraph for multi-step reasoning and citation-grounded retrieval across 10+ sources. Architected a document processing pipeline with semantic chunking and ChromaDB and SQLAlchemy embeddings, cutting retrieval latency by \u223c30%. Containerized the application using Streamlit, RESTful APIs, and Docker for modular deployment, reducing environment setup time to under 5 minutes.",
+      "github_url": "",
+      "tech_stack": [
+        "FastAPI",
+        "LangGraph",
+        "ChromaDB",
+        "SQLAlchemy",
+        "Streamlit",
+        "RESTful APIs",
+        "Docker",
+        "Python"
+      ]
+    },
+    {
+      "name": "Online Retail Sales Analytics Dashboard",
+      "description": "Built an end-to-end ETL analytics pipeline using Python (Pandas), SQLite, and Power BI to analyze 1M+ transactions across 43 countries. Engineered a data cleaning and feature pipeline to remove invalid records and extract 15+ revenue and time-based features for analysis. Created 20 analytical SQL queries and a Power BI dashboard with KPIs, revenue trends, customer insights, and interactive filters.",
+      "github_url": "",
+      "tech_stack": [
+        "Python",
+        "SQL",
+        "Power BI",
+        "Pandas",
+        "SQLite"
+      ]
+    },
+    {
+      "name": "ASL Gesture Recognition (CNN)",
+      "description": "Trained a CNN to classify 24 ASL sign language gestures from image data, achieving 94% validation accuracy via batch normalization and dropout. Implemented a complete data preprocessing pipeline including reshaping, normalization, one-hot encoding, and structured dataset handling. Improved model performance using Adam optimizer, early stopping, and LR scheduling for overfitting prevention and robust generalization.",
+      "github_url": "",
+      "tech_stack": [
+        "CNN",
+        "Deep Learning",
+        "Python"
+      ]
+    }
+  ],
+  "skills": [
+    "Python",
+    "SQL",
+    "Pandas",
+    "NumPy",
+    "Data Cleaning",
+    "EDA",
+    "Feature Engineering",
+    "Matplotlib",
+    "Seaborn",
+    "Regression",
+    "Random Forest",
+    "Gradient Boosting",
+    "SVR",
+    "LSTM",
+    "Model Evaluation",
+    "MAE",
+    "RMSE",
+    "R2",
+    "Git",
+    "GitHub",
+    "Excel",
+    "Power BI",
+    "SQLite",
+    "Jupyter Notebook"
+  ],
+  "education": [
+    {
+      "institution": "BITS Pilani",
+      "degree": "B.E.",
+      "field_of_study": "Chemical Engineering",
+      "start_date": "2022-08",
+      "end_date": "2026-07",
+      "gpa": ""
+    },
+    {
+      "institution": "Mother\u2019s Public School",
+      "degree": "Class XII",
+      "field_of_study": "",
+      "start_date": "",
+      "end_date": "",
+      "gpa": "89%"
+    },
+    {
+      "institution": "DAV Public School, MCL",
+      "degree": "Class X",
+      "field_of_study": "",
+      "start_date": "",
+      "end_date": "",
+      "gpa": "98.4%"
+    }
+  ]
+}
