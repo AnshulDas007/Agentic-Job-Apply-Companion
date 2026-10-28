@@ -40,7 +40,7 @@ PLATFORM_ACTORS: Dict[str, Dict[str, Any]] = {
         "tier": "tier2_platform",
     },
     "wellfound": {
-        "actor_id": "dainty_screw/wellfound-scraper",
+        "actor_id": "johnvc/wellfound-jobs-api",
         "tier": "tier1_ats",
     },
     "ziprecruiter": {
@@ -70,6 +70,8 @@ def _normalize_apify_result(item: dict, platform: str) -> Optional[RawJobListing
             or item.get("organization")
             or ""
         )
+        if isinstance(company, dict):
+            company = company.get("name") or ""
         url = (
             item.get("url")
             or item.get("jobUrl")
@@ -80,6 +82,7 @@ def _normalize_apify_result(item: dict, platform: str) -> Optional[RawJobListing
             item.get("location")
             or item.get("jobLocation")
             or item.get("place")
+            or ", ".join(item.get("locationNames") or [])
             or ""
         )
         description = (
@@ -92,6 +95,7 @@ def _normalize_apify_result(item: dict, platform: str) -> Optional[RawJobListing
             item.get("salary")
             or item.get("salaryText")
             or item.get("compensation")
+            or item.get("compensationRaw")
         )
         posted = (
             item.get("postedDate")
@@ -182,8 +186,9 @@ class ApifyScraper(BaseScraper):
             })
         elif self.platform == "wellfound":
             base_input.update({
-                "searchTerms": [query],
-                "location": location,
+                "roles": [query],
+                # Wellfound filters by location slug, e.g. "Bangalore, India" -> "bangalore"
+                "locations": [location.split(",")[0].strip().lower().replace(" ", "-")] if location else [],
             })
         elif self.platform == "ziprecruiter":
             base_input.update({
